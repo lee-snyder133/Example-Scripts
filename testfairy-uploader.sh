@@ -3,8 +3,8 @@
 # This upload script is both for iOS and Android
 UPLOADER_VERSION=2.15
 
-# TestFairy API_KEY (required)
-# Find it here: https://app.testfairy.com/settings/access-key
+# TestFairy API_KEY. Find it here: https://app.testfairy.com/settings/access-key
+# Required Parameter
 TESTFAIRY_API_KEY=
 
 # Symbols mapping file (optional)
@@ -54,7 +54,7 @@ API_ENDPOINT=https://app.testfairy.com/api/upload/
 usage() {
     echo "Usage: sh $0 /path/to/your/APP_FILENAME"
     echo "Alternate Usage (if sh does not work): bash $0 /path/to/your/APP_FILENAME"
-    echo "If no app filepath argument is provided, a default file path will be used."
+    echo "If no argument is provided, a default file path will be used."
 }
 
 # Verify that all required tools are installed.
@@ -69,7 +69,7 @@ verify_settings() {
     # Check if API Key is set. If not, exit with error message.
     if [ -z "${TESTFAIRY_API_KEY}" ]; then
         usage
-        echo "Error: API Key is missing. Please update the script with your API key."
+        echo "Error: API Key is missing. Please update the script with your private API key."
         exit 1
     fi
 }
@@ -94,9 +94,13 @@ main() {
     fi
 
     # Build required curl arguments.
-    CURL_ARGS="-F api_key=${TESTFAIRY_API_KEY} -F file=@${APP_FILENAME} -F release_notes=${RELEASE_NOTES} -F tester_groups=${GROUPS} -F auto_update=${AUTO_UPDATE} -F notify_testers=${NOTIFY}"
+    CURL_ARGS="-F api_key=${TESTFAIRY_API_KEY} -F file=@${APP_FILENAME}"
 
     # Append optional parameters if provided.
+    [ -n "$RELEASE_NOTES" ] && CURL_ARGS="${CURL_ARGS} -F release_notes=@${RELEASE_NOTES}"
+    [ -n "$GROUPS" ] && CURL_ARGS="${CURL_ARGS} -F tester_groups=@${GROUPS}"
+    [ -n "$AUTO_UPDATE" ] && CURL_ARGS="${CURL_ARGS} -F auto_update=@${AUTO_UPDATE}"
+    [ -n "$NOTIFY" ] && CURL_ARGS="${CURL_ARGS} -F notify_testers=@${NOTIFY}"
     [ -n "$SYMBOLS_FILE" ] && CURL_ARGS="${CURL_ARGS} -F symbols_mapping_file=@${SYMBOLS_FILE}"
     [ -n "$TAGS" ] && CURL_ARGS="${CURL_ARGS} -F tags=${TAGS}"
     [ -n "$FOLDER_NAME" ] && CURL_ARGS="${CURL_ARGS} -F folder_name=${FOLDER_NAME}"
@@ -111,7 +115,7 @@ main() {
     URL=$(echo ${JSON} | sed 's/\\\//\//g' | sed -n 's/.*"build_url"\s*:\s*"\([^"]*\)".*/\1/p')
     if [ -z "$URL" ]; then
         # Display error message if upload failed.
-        echo "Error: Build upload was unsuccessful. Please contact support@saucelabs.com"
+        echo "Error: Build uploaded but no reply from server. Please contact support@saucelabs.com"
         exit 1
     fi
     # Print the build URL if successful.
